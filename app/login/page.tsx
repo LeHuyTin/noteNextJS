@@ -21,18 +21,6 @@ const LoginForm = () => {
     }, 1500);
   };
 
-  const handleGoogleLogin = () => {
-    console.log('Google login initiated');
-  };
-
-  const handleFacebookLogin = () => {
-    console.log('Facebook login initiated');
-  };
-
-  const handleGitHubLogin = () => {
-    console.log('Facebook login initiated');
-  };
-
 
 
   const togglePasswordVisibility = () => {

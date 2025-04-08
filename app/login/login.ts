@@ -3,19 +3,19 @@
 import { signIn, signOut } from "../auth";
 
 export const github_login = async () =>{
-    await signIn("github",{redirectTo: "/"});
+    await signIn("github",{redirectTo: "/homePage"});
 };
 
 export const facebook_login = async () =>{
-    await signIn("facebook",{redirectTo: "/"});
+    await signIn("facebook",{redirectTo: "/homePage"});
 };
 
 export const google_login = async () =>{
-    await signIn("google",{redirectTo: "/"});
+    await signIn("google",{redirectTo: "/homePage"});
 };
 
 export const twitter_login = async () =>{
-    await signIn("twitter",{redirectTo: "/"});
+    await signIn("twitter",{redirectTo: "/homePage"});
 };
 
 export const logout = async () =>{
