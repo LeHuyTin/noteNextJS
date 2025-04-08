@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { logout, showUserData } from "../login/login";
+import { auth } from "../auth";
 
 const NotesApp = () => {
   const noteColors = ["#ff9f7f", "#ffcc7f", "#d8b4fe", "#80deea", "#e6ee9c"];
@@ -192,6 +194,7 @@ const NotesApp = () => {
   // Handle logout
   const handleLogout = () => {
     alert("Đã đăng xuất");
+    logout();
     // Implement logout logic here
   };
 
