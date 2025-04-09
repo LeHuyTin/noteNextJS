@@ -8,6 +8,21 @@ const NotesApp = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/user");
+        const user = await res.json();
+        console.log(user);
+        if (user?.name) setUsername(user.name);
+      } catch (err) {
+        console.error("Không lấy được thông tin người dùng", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   // Initialize with a blank note as the first item
   const [notes, setNotes] = useState([
     {
