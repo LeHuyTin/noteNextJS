@@ -14,7 +14,7 @@ const NotesApp = () => {
         const res = await fetch("/api/user");
         const user = await res.json();
         console.log(user);
-        if (user?.name) setUsername(user.name);
+        if (user?.email) setUsername(user.email);
       } catch (err) {
         console.error("Không lấy được thông tin người dùng", err);
       }

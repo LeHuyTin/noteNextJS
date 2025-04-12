@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { facebook_login, github_login, google_login, twitter_login } from './login';
+import { facebook_login, github_login, google_login, password_login, twitter_login } from './login';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -11,17 +11,29 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
-      console.log('Login attempt:', { email, password, rememberMe });
+    try {
+      password_login(email, password);
+      console.log("Login success:");
+      setTimeout(() => {
+        console.log('Login attempt:', { email, password, rememberMe });
+        setIsLoading(false);
+      }, 1500);
+      
+      // redirect hoặc xử lý kết quả tại đây nếu cần
+    } catch (error) {
+      console.error("Login failed:", error);
+      setTimeout(() => {
+        console.log('Login cant:', { email, password, rememberMe });
+        setIsLoading(false);
+      }, 1500);
+      // thông báo lỗi cho người dùng
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
-
-
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -43,6 +55,7 @@ const LoginForm = () => {
             <input
               id="email"
               type="email"
+              name='email'
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-black"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -58,6 +71,7 @@ const LoginForm = () => {
             <div className="relative mt-1">
               <input
                 id="password"
+                name='password'
                 type={showPassword ? "text" : "password"}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-black"
                 value={password}
@@ -106,7 +120,7 @@ const LoginForm = () => {
           
           <div>
             <button
-              type="submit"
+              type='submit'
               className="flex w-full justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               disabled={isLoading}
             >
