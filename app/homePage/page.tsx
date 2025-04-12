@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { logout } from "../login/login";
+import { logout } from "../login/login_Action";
 
 const NotesApp = () => {
   const noteColors = ["#ff9f7f", "#ffcc7f", "#d8b4fe", "#80deea", "#e6ee9c"];
@@ -9,6 +9,8 @@ const NotesApp = () => {
   const [showStarredOnly, setShowStarredOnly] = useState(false);
 
   useEffect(() => {
+
+    
     const fetchUser = async () => {
       try {
         const res = await fetch("/api/user");

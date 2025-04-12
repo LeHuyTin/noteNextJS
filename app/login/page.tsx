@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { facebook_login, github_login, google_login, password_login, twitter_login } from './login';
+import { useSearchParams } from 'next/navigation';
+import { facebook_login, github_login, google_login, password_login, twitter_login } from './login_Action';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,11 @@ const LoginForm = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+const searchParams = useSearchParams();
+const success = searchParams.get('success');
+
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,15 +27,12 @@ const LoginForm = () => {
         console.log('Login attempt:', { email, password, rememberMe });
         setIsLoading(false);
       }, 1500);
-      
-      // redirect hoặc xử lý kết quả tại đây nếu cần
     } catch (error) {
       console.error("Login failed:", error);
       setTimeout(() => {
         console.log('Login cant:', { email, password, rememberMe });
         setIsLoading(false);
       }, 1500);
-      // thông báo lỗi cho người dùng
     } finally {
       setIsLoading(false);
     }
@@ -45,6 +48,11 @@ const LoginForm = () => {
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800">Đăng nhập</h2>
           <p className="mt-2 text-gray-600">Chào mừng bạn trở lại!</p>
+            {success === '1' && (
+          <div className="mb-4 rounded bg-green-100 px-4 py-2 text-sm text-green-700 text-center">
+          Đăng ký thành công! Vui lòng kiểm tra email xác nhận trước khi đăng nhập
+          </div>
+            )}
         </div>
         
         <form onSubmit={handleSubmit}>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { signup_submit } from '../signup/signUp_action';
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
@@ -72,12 +73,10 @@ const SignupForm = () => {
       console.log('Sign up data:', formData);
       setIsLoading(false);
     }, 1500);
+
+    signup_submit(formData.fullName, formData.email, formData.password)
   };
 
-  const handleGoogleSignUp = () => {
-    console.log('Initiating Google Sign-up');
-  };
-  
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
