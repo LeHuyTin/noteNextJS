@@ -4,8 +4,7 @@ import { NoteInput } from '@/types/note';
 
 export async function GET(request: NextRequest) {
   try {
-    // The userId would normally come from an authenticated session
-    // For now, we'll use a query parameter as an example
+    
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId');
     
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const notes = await getNotes(userId);
-    return NextResponse.json(notes);
+    return NextResponse.json(notes, { status: 200 });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch notes' },
