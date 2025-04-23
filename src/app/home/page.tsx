@@ -2,16 +2,20 @@
 import React, { useState, useEffect } from "react";
 import { Note } from "@/types/note";
 import { toast } from "react-toastify";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const NotesApp = () => {
   const noteColors = ["#ff9f7f", "#ffcc7f", "#d8b4fe", "#80deea", "#e6ee9c"];
-  const [username, setUsername] = useState("Huy Tín"); 
+  const [username, setUsername] = useState(""); 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State for notes from API
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [notes, setNotes] = useState<any[]>([]);
   const [isNewNoteBlank, setIsNewNoteBlank] = useState(true);
 
@@ -25,16 +29,25 @@ const NotesApp = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
 
-  // Demo user ID - in a real app, this would come from authentication
-  const demoUserId = "demo-user-123";
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && session?.user) {
+      // Cập nhật username khi đã có session
+      setUsername(session.user.name || session.user.email || "User");
+    }
+  }, [status, session, router]);
 
   // Fetch notes from API
   useEffect(() => {
+    // Chỉ tải dữ liệu khi đã xác thực
+    if (status !== "authenticated" || !session?.user?.id) return;
+
     const fetchNotes = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/notes?userId=${demoUserId}`);
+        const response = await fetch(`/api/notes?userId=${session.user.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch notes');
         }
@@ -51,7 +64,7 @@ const NotesApp = () => {
     };
 
     fetchNotes();
-  }, []);
+  }, [status, session]);
 
   // Convert API note to UI format
   const convertNoteForUI = (note: Note) => {
@@ -101,6 +114,12 @@ const NotesApp = () => {
   const saveNote = async (id: string | null, title: string, content: string) => {
     if (title.trim() === "" && content.trim() === "") return;
     
+    // Đảm bảo người dùng đã đăng nhập
+    if (!session?.user?.id) {
+      toast.error('You must be logged in to save notes');
+      return;
+    }
+    
     try {
       const color = getRandomColor();
       const contentWithMetadata = `${content}; color:${color}`;
@@ -113,7 +132,7 @@ const NotesApp = () => {
           body: JSON.stringify({
             title: title || 'Untitled Note',
             content: contentWithMetadata,
-            user_id: demoUserId
+            user_id: session.user.id
           })
         });
         
@@ -265,8 +284,9 @@ const NotesApp = () => {
 
   // Handle logout
   const handleLogout = () => {
+    // Implement logout logic here using NextAuth
+    router.push("/api/auth/signout");
     toast.info('Đã đăng xuất');
-    // Implement logout logic here
   };
 
   // Add a new blank note

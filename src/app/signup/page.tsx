@@ -2,8 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signUpWithCredentials } from '@/utils/authUtils';
 
 const SignupForm = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -14,6 +17,7 @@ const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target as HTMLInputElement;
@@ -27,6 +31,10 @@ const SignupForm = () => {
         ...errors,
         [name]: ''
       });
+    }
+    
+    if (signupError) {
+      setSignupError(null);
     }
   };
 
@@ -57,7 +65,7 @@ const SignupForm = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     const formErrors = validateForm();
@@ -67,15 +75,31 @@ const SignupForm = () => {
     }
 
     setIsLoading(true);
+    setSignupError(null);
 
-    setTimeout(() => {
-      console.log('Sign up data:', formData);
+    try {
+      // Use NextAuth + Supabase for signup
+      const result = await signUpWithCredentials({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password
+      });
+      
+      // Nếu đăng ký thành công, chuyển hướng đến trang xác nhận email
+      if (result && result.success) {
+        router.push(`/verify-email?email=${encodeURIComponent(result.email)}`);
+      }
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setSignupError(error.message || 'Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại sau.');
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleGoogleSignUp = () => {
     console.log('Initiating Google Sign-up');
+    // This would be implemented using NextAuth's Google provider
+    // Not implemented in this example
   };
   
   const togglePasswordVisibility = () => {
@@ -93,6 +117,21 @@ const SignupForm = () => {
           <h2 className="text-3xl font-bold text-gray-800">Đăng ký</h2>
           <p className="mt-2 text-gray-600">Tạo tài khoản mới</p>
         </div>
+        
+        {signupError && (
+          <div className="mb-4 rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{signupError}</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
