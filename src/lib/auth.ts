@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
             if (error.message === "Invalid login credentials") {
               throw new Error("invalid_credentials");
             }
-            // Trả về lỗi chung, không sử dụng dấu
+            
             throw new Error("auth_error");
           }
 
@@ -43,22 +43,10 @@ export const authOptions: NextAuthOptions = {
             throw new Error("session_not_created");
           }
 
-          // Lấy thông tin profile từ bảng profiles
-          const { data: profileData, error: profileError } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", data.user.id)
-            .single();
-
-          if (profileError) {
-            console.error("Lỗi khi lấy profile:", profileError);
-          }
-
-          // Trả về dữ liệu người dùng để lưu trong session
           return {
             id: data.user.id,
             email: data.user.email,
-            name: profileData?.full_name,
+            name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0],
           };
         } catch (error: any) {
           console.error("Lỗi đăng nhập:", error);

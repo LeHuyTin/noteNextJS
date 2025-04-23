@@ -1,6 +1,5 @@
 import { signIn } from "next-auth/react";
 import supabase from "@/lib/supabase/client";
-import { CreateUserProfile, UserProfile } from "@/types/user";
 
 export interface SignUpData {
   fullName: string;
@@ -22,12 +21,36 @@ export async function signUpWithCredentials(data: SignUpData) {
       }
     });
 
-    if (authError || !authData.user) {
-      throw new Error(authError?.message || "Đăng ký không thành công");
+    if (authError) {
+      // Xử lý các loại lỗi cụ thể từ Supabase
+      if (authError.message.includes("email already in use")) {
+        throw new Error("Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.");
+      }
+      
+      if (authError.message.includes("password")) {
+        if (authError.message.includes("length")) {
+          throw new Error("Mật khẩu phải có ít nhất 6 ký tự.");
+        }
+        if (authError.message.includes("strong")) {
+          throw new Error("Mật khẩu không đủ mạnh. Vui lòng sử dụng kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.");
+        }
+        throw new Error("Mật khẩu không hợp lệ. " + authError.message);
+      }
+      
+      if (authError.message.includes("email")) {
+        if (authError.message.includes("format")) {
+          throw new Error("Định dạng email không hợp lệ.");
+        }
+        throw new Error("Email không hợp lệ. " + authError.message);
+      }
+      
+      // Lỗi chung
+      throw new Error(authError.message || "Đăng ký không thành công");
     }
-
-    // Không cần tạo profile thủ công vì trigger sẽ tự động làm điều này
-    // Profile sẽ được tạo tự động bởi trigger database
+    
+    if (!authData?.user) {
+      throw new Error("Không thể tạo tài khoản. Vui lòng thử lại sau.");
+    }
 
     // Trả về thông tin email để hiển thị trên trang xác nhận
     return {
@@ -35,6 +58,7 @@ export async function signUpWithCredentials(data: SignUpData) {
       success: true
     };
   } catch (error: any) {
+    console.error("Signup error details:", error);
     throw new Error(error.message || "Đã xảy ra lỗi trong quá trình đăng ký");
   }
 }
@@ -52,56 +76,3 @@ export async function signInWithCredentials(email: string, password: string, cal
   }
 }
 
-/**
- * Create a user profile in the database
- */
-export async function createUserProfileInDB(userData: CreateUserProfile) {
-  return await supabase
-    .from('profiles')
-    .insert([
-      {
-        id: userData.id,
-        email: userData.email,
-        full_name: userData.fullName,
-      }
-    ]);
-}
-
-/**
- * Get a user profile from the database
- */
-export async function getUserProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-
-  if (error) {
-    return { data: null, error };
-  }
-
-  const userProfile: UserProfile = {
-    id: data.id,
-    email: data.email,
-    fullName: data.full_name,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at
-  };
-
-  return { data: userProfile, error: null };
-}
-
-/**
- * Update a user profile in the database
- */
-export async function updateUserProfile(userId: string, userData: Partial<CreateUserProfile>) {
-  const updateData: any = {};
-  
-  if (userData.fullName) updateData.full_name = userData.fullName;
-  
-  return await supabase
-    .from('profiles')
-    .update(updateData)
-    .eq('id', userId);
-}

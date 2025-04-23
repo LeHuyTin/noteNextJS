@@ -33,14 +33,14 @@ const NotesApp = () => {
     if (status === "unauthenticated") {
       router.push("/login");
     } else if (status === "authenticated" && session?.user) {
-      // Cập nhật username khi đã có session
+     
       setUsername(session.user.name || session.user.email || "User");
     }
   }, [status, session, router]);
 
   // Fetch notes from API
   useEffect(() => {
-    // Chỉ tải dữ liệu khi đã xác thực
+    
     if (status !== "authenticated" || !session?.user?.id) return;
 
     const fetchNotes = async () => {
@@ -66,7 +66,7 @@ const NotesApp = () => {
     fetchNotes();
   }, [status, session]);
 
-  // Convert API note to UI format
+ 
   const convertNoteForUI = (note: Note) => {
     return {
       id: note.id,
@@ -114,7 +114,7 @@ const NotesApp = () => {
   const saveNote = async (id: string | null, title: string, content: string) => {
     if (title.trim() === "" && content.trim() === "") return;
     
-    // Đảm bảo người dùng đã đăng nhập
+    
     if (!session?.user?.id) {
       toast.error('You must be logged in to save notes');
       return;
@@ -125,7 +125,7 @@ const NotesApp = () => {
       const contentWithMetadata = `${content}; color:${color}`;
 
       if (id === null) {
-        // Create new note
+        
         const response = await fetch('/api/notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

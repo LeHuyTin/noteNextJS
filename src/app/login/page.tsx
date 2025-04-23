@@ -1,62 +1,60 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { signInWithCredentials } from '@/utils/authUtils';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { signInWithCredentials } from "@/utils/authUtils";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const LoginPage = () => {
-  const router = useRouter();
+
   const searchParams = useSearchParams();
-  const verified = searchParams.get('verified');
-  const error = searchParams.get('error');
+  const verified = searchParams.get("verified");
+  const error = searchParams.get("error");
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
+
 
   useEffect(() => {
-    // Hiển thị thông báo thành công nếu email đã được xác nhận
-    if (verified === 'true') {
-      setSuccessMessage('Email đã được xác nhận thành công! Bây giờ bạn có thể đăng nhập.');
+    // Kiểm tra nếu người dùng vừa xác thực email thành công
+    if (verified === "true") {
+      setSuccessMessage("Email của bạn đã được xác nhận. Vui lòng đăng nhập.");
     }
 
-    // Xử lý các mã lỗi không dấu từ NextAuth
+    // Hiển thị thông báo lỗi từ URL (từ NextAuth)
     if (error) {
       switch (error) {
-        case 'verification_failed':
-          setLoginError('Xác nhận email không thành công. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.');
+        case "email_not_confirmed":
+          setLoginError(
+            "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư của bạn."
+          );
+          setIsEmailNotConfirmed(true);
           break;
-        case 'email_not_confirmed':
-          setLoginError('Vui lòng xác nhận email của bạn trước khi đăng nhập.');
+        case "invalid_credentials":
+          setLoginError("Email hoặc mật khẩu không đúng.");
           break;
-        case 'missing_credentials':
-          setLoginError('Vui lòng nhập email và mật khẩu.');
+        case "auth_error":
+          setLoginError("Đã xảy ra lỗi xác thực. Vui lòng thử lại sau.");
           break;
-        case 'invalid_credentials':
-          setLoginError('Email hoặc mật khẩu không chính xác.');
+        case "missing_credentials":
+          setLoginError("Vui lòng nhập email và mật khẩu.");
           break;
-        case 'auth_error':
-          setLoginError('Đã xảy ra lỗi xác thực. Vui lòng thử lại sau.');
+        case "user_not_found":
+          setLoginError("Không tìm thấy tài khoản với email này.");
           break;
-        case 'user_not_found':
-          setLoginError('Không tìm thấy tài khoản với email này.');
-          break;
-        case 'login_failed':
-          setLoginError('Đăng nhập thất bại. Vui lòng thử lại sau.');
-          break;
-        case 'session_not_created':
-          setLoginError('Không thể tạo phiên đăng nhập. Vui lòng thử lại.');
+        case "session_not_created":
+          setLoginError("Không thể tạo phiên đăng nhập. Vui lòng thử lại sau.");
           break;
         default:
-          // Nếu là lỗi khác không được xử lý cụ thể
-          setLoginError('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+          setLoginError("Đăng nhập không thành công. Vui lòng thử lại.");
       }
     }
   }, [verified, error]);
@@ -65,47 +63,50 @@ const LoginPage = () => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
-    
+
     if (errors[name]) {
       setErrors({
         ...errors,
-        [name]: ''
+        [name]: "",
       });
     }
-    
-    // Clear general login error when user types
+
     if (loginError) {
       setLoginError(null);
     }
 
-    // Clear success message when user types
     if (successMessage) {
       setSuccessMessage(null);
+    }
+
+    // Reset email not confirmed state khi thay đổi email
+    if (name === "email" && isEmailNotConfirmed) {
+      setIsEmailNotConfirmed(false);
     }
   };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!formData.email.trim()) {
-      newErrors.email = 'Vui lòng nhập email';
+      newErrors.email = "Vui lòng nhập email";
     } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
+      newErrors.email = "Email không hợp lệ";
     }
-    
+
     if (!formData.password.trim()) {
-      newErrors.password = 'Vui lòng nhập mật khẩu';
+      newErrors.password = "Vui lòng nhập mật khẩu";
     }
-    
+
     return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
@@ -115,21 +116,12 @@ const LoginPage = () => {
     setIsLoading(true);
     setLoginError(null);
     setSuccessMessage(null);
+    setIsEmailNotConfirmed(false);
 
     try {
-      // Use NextAuth for login
-      await signInWithCredentials(formData.email, formData.password, '/home');
-      // If login is successful, NextAuth will redirect to the callback URL
+      await signInWithCredentials(formData.email, formData.password, "/home");
     } catch (error: any) {
-      console.error('Login error:', error);
-      
-      // Xử lý trường hợp email chưa xác nhận
-      if (error.message?.includes('Email not confirmed')) {
-        setLoginError('Email chưa được xác nhận. Vui lòng kiểm tra hộp thư của bạn và nhấp vào liên kết xác nhận.');
-      } else {
-        setLoginError('Email hoặc mật khẩu không chính xác');
-      }
-      
+      console.error("Login error:", error);
       setIsLoading(false);
     }
   };
@@ -143,15 +135,26 @@ const LoginPage = () => {
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800">Đăng nhập</h2>
-          <p className="mt-2 text-gray-600">Xin chào, rất vui khi gặp lại bạn!</p>
+          <p className="mt-2 text-gray-600">
+            Xin chào, rất vui khi gặp lại bạn!
+          </p>
         </div>
-        
+
         {successMessage && (
           <div className="mb-4 rounded-md bg-green-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-green-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -160,13 +163,21 @@ const LoginPage = () => {
             </div>
           </div>
         )}
-        
+
         {loginError && (
           <div className="mb-4 rounded-md bg-red-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -175,32 +186,42 @@ const LoginPage = () => {
             </div>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="email">
+            <label
+              className="block text-sm font-medium text-gray-700"
+              htmlFor="email"
+            >
               Email
             </label>
             <input
               id="email"
               name="email"
               type="email"
-              className={`text-black mt-1 block w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500`}
+              className={`text-black mt-1 block w-full rounded-md border ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500`}
               value={formData.email}
               onChange={handleChange}
-              placeholder="your.email@example.com"
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">{errors.email}</p>
             )}
           </div>
-          
+
           <div className="mb-6">
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+              <label
+                className="block text-sm font-medium text-gray-700"
+                htmlFor="password"
+              >
                 Mật khẩu
               </label>
-              <Link href="#" className="text-xs font-medium text-blue-600 hover:text-blue-500">
+              <Link
+                href="#"
+                className="text-xs font-medium text-blue-600 hover:text-blue-500"
+              >
                 Quên mật khẩu?
               </Link>
             </div>
@@ -209,10 +230,11 @@ const LoginPage = () => {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                className={`text-black block w-full rounded-md border ${errors.password ? 'border-red-500' : 'border-gray-300'} px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500`}
+                className={`text-black block w-full rounded-md border ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500`}
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="••••••••"
               />
               <button
                 type="button"
@@ -220,13 +242,40 @@ const LoginPage = () => {
                 onClick={togglePasswordVisibility}
               >
                 {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                    />
                   </svg>
                 )}
               </button>
@@ -235,7 +284,7 @@ const LoginPage = () => {
               <p className="mt-1 text-sm text-red-600">{errors.password}</p>
             )}
           </div>
-          
+
           <div>
             <button
               type="submit"
@@ -243,21 +292,40 @@ const LoginPage = () => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <svg className="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="h-5 w-5 animate-spin text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
               ) : (
-                'Đăng nhập'
+                "Đăng nhập"
               )}
             </button>
           </div>
         </form>
-        
+
         <div className="mt-6">
           <p className="text-center text-sm text-gray-600">
-            Chưa có tài khoản?{' '}
-            <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+            Chưa có tài khoản?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               Đăng ký
             </Link>
           </p>

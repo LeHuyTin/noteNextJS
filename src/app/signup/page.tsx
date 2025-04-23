@@ -91,7 +91,26 @@ const SignupForm = () => {
       }
     } catch (error: any) {
       console.error('Signup error:', error);
-      setSignupError(error.message || 'Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại sau.');
+      
+      // Phân tích lỗi từ Supabase và hiển thị thông báo phù hợp
+      const errorMessage = error.message || 'Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại sau.';
+      
+      // Hiển thị lỗi dưới trường tương ứng nếu liên quan đến một trường cụ thể
+      if (errorMessage.toLowerCase().includes('email')) {
+        setErrors((prev) => ({
+          ...prev,
+          email: errorMessage
+        }));
+      } else if (errorMessage.toLowerCase().includes('mật khẩu')) {
+        setErrors((prev) => ({
+          ...prev,
+          password: errorMessage
+        }));
+      } else {
+        // Hiển thị lỗi chung nếu không liên quan đến trường cụ thể
+        setSignupError(errorMessage);
+      }
+      
       setIsLoading(false);
     }
   };
