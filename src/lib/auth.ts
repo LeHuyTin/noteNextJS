@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          // Sử dụng mã lỗi không dấu
+          
           throw new Error("missing_credentials");
         }
 
@@ -24,7 +24,6 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (error) {
-            // Xử lý các loại lỗi cụ thể từ Supabase
             if (error.message === "Email not confirmed") {
               throw new Error("email_not_confirmed");
             }
@@ -50,7 +49,6 @@ export const authOptions: NextAuthOptions = {
           };
         } catch (error: any) {
           console.error("Lỗi đăng nhập:", error);
-          // Sử dụng mã lỗi không dấu
           if (error.message && typeof error.message === 'string') {
             throw new Error(error.message);
           }
@@ -62,7 +60,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
     signOut: "/login",
-    error: "/login", // Sẽ chuyển hướng về trang login với thông báo lỗi
+    error: "/login", 
   },
   callbacks: {
     async jwt({ token, user }) {

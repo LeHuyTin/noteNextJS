@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 const NotesApp = () => {
   const noteColors = ["#ff9f7f", "#ffcc7f", "#d8b4fe", "#80deea", "#e6ee9c"];
-  const [username, setUsername] = useState(""); 
+  const [username, setUsername] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -19,29 +19,35 @@ const NotesApp = () => {
   const [notes, setNotes] = useState<any[]>([]);
   const [isNewNoteBlank, setIsNewNoteBlank] = useState(true);
 
-  // State for search and pagination
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const notesPerPage = 6; // 2 rows x 3 columns
+  const notesPerPage = 6;
 
-  // State for editing
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated" && session?.user) {
-     
+    setCurrentPage(1);
+  }, [searchTerm, showStarredOnly]);
+
+  useEffect(() => {
+    
+    if (status === "loading") return;
+    if (status === "unauthenticated" || !session) {
+      router.replace("/login");
+      return;
+    }
+
+    if (status === "authenticated" && session?.user) {
       setUsername(session.user.name || session.user.email || "User");
     }
   }, [status, session, router]);
 
-  // Fetch notes from API
   useEffect(() => {
-    
-    if (status !== "authenticated" || !session?.user?.id) return;
+    if (status !== "authenticated" || !session?.user?.id) {
+      return;
+    }
 
     const fetchNotes = async () => {
       setLoading(true);
@@ -49,15 +55,15 @@ const NotesApp = () => {
       try {
         const response = await fetch(`/api/notes?userId=${session.user.id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch notes');
+          throw new Error("Failed to fetch notes");
         }
         const data = await response.json();
         setNotes(data);
-        toast.success('Notes loaded successfully');
+        toast.success("Notes loaded successfully");
       } catch (err: any) {
-        console.error('Error fetching notes:', err);
-        setError(err.message || 'An error occurred while fetching notes');
-        toast.error('Failed to load notes');
+        console.error("Error fetching notes:", err);
+        setError(err.message || "An error occurred while fetching notes");
+        toast.error("Failed to load notes");
       } finally {
         setLoading(false);
       }
@@ -66,33 +72,45 @@ const NotesApp = () => {
     fetchNotes();
   }, [status, session]);
 
- 
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
+        <p className="ml-4 text-gray-700">Đang xác thực...</p>
+      </div>
+    );
+  }
+
+
   const convertNoteForUI = (note: Note) => {
     return {
       id: note.id,
       title: note.title,
       content: note.content,
-      color: note.content.includes('color:') 
-        ? note.content.split('color:')[1].split(';')[0].trim()
+      color: note.content.includes("color:")
+        ? note.content.split("color:")[1].split(";")[0].trim()
         : getRandomColor(),
-      date: new Date(note.created_at).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      }).replace(",", ""),
-      isStarred: note.content.includes('starred:true'),
-      user_id: note.user_id
+      date: new Date(note.created_at)
+        .toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+        .replace(",", ""),
+      isStarred: note.content.includes("starred:true"),
+      user_id: note.user_id,
     };
   };
 
-  // Filter notes based on search term, starred status
-  const filteredNotes = notes.map(convertNoteForUI).filter(
-    (note) => (
-      (note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-       note.content.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (!showStarredOnly || note.isStarred)
-    )
-  );
+
+  const filteredNotes = notes
+    .map(convertNoteForUI)
+    .filter(
+      (note) =>
+        (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.content.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (!showStarredOnly || note.isStarred)
+    );
 
   // Calculate current notes to display
   const indexOfLastNote = currentPage * notesPerPage;
@@ -100,98 +118,101 @@ const NotesApp = () => {
   const currentNotes = filteredNotes.slice(indexOfFirstNote, indexOfLastNote);
   const totalPages = Math.ceil(filteredNotes.length / notesPerPage);
 
-  // Reset to first page when search or filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, showStarredOnly]);
-
   // Generate a random color
   const getRandomColor = () => {
     return noteColors[Math.floor(Math.random() * noteColors.length)];
   };
 
-  // Save note function
-  const saveNote = async (id: string | null, title: string, content: string) => {
-    if (title.trim() === "" && content.trim() === "") return;
-    
-    
-    if (!session?.user?.id) {
-      toast.error('You must be logged in to save notes');
+  const saveNote = async (
+    id: string | null,
+    title: string,
+    content: string
+  ) => {
+    if (title.trim() === "" && content.trim() === "") 
+    {
+      setIsNewNoteBlank(true);
+      toast.error("Please enter a title or content");
       return;
     }
-    
+      
+
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to save notes");
+      router.replace("/login");
+      return;
+    }
+
     try {
       const color = getRandomColor();
       const contentWithMetadata = `${content}; color:${color}`;
 
       if (id === null) {
-        
-        const response = await fetch('/api/notes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title: title || 'Untitled Note',
+            title: title || "Untitled Note",
             content: contentWithMetadata,
-            user_id: session.user.id
-          })
+            user_id: session.user.id,
+          }),
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to create note');
+          throw new Error("Failed to create note");
         }
-        
+
         const newNote = await response.json();
-        setNotes(prevNotes => [...prevNotes, newNote]);
-        toast.success('Note created successfully!');
+        setNotes((prevNotes) => [...prevNotes, newNote]);
+        toast.success("Note created successfully!");
       } else {
         // Update existing note
-        const existingNote = notes.find(note => note.id === id);
+        const existingNote = notes.find((note) => note.id === id);
         if (!existingNote) return;
 
         // Preserve metadata like color and starred status
         let updatedContent = content;
-        if (existingNote.content.includes('color:')) {
+        if (existingNote.content.includes("color:")) {
           const colorMatch = existingNote.content.match(/color:([^;]+)/);
           if (colorMatch) {
             updatedContent = `${content}; color:${colorMatch[1]}`;
           }
         }
-        
+
         // Check if note is starred
-        const isStarred = existingNote.content.includes('starred:true');
+        const isStarred = existingNote.content.includes("starred:true");
         if (isStarred) {
           updatedContent = `${updatedContent}; starred:true`;
         }
 
         const response = await fetch(`/api/notes/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: title || existingNote.title,
-            content: updatedContent
-          })
+            content: updatedContent,
+          }),
         });
-        
+
         if (!response.ok) {
-          throw new Error('Failed to update note');
+          throw new Error("Failed to update note");
         }
-        
+
         const updatedNote = await response.json();
-        setNotes(prevNotes => 
-          prevNotes.map(note => note.id === id ? updatedNote : note)
+        setNotes((prevNotes) =>
+          prevNotes.map((note) => (note.id === id ? updatedNote : note))
         );
-        toast.info('Note updated!');
+        toast.info("Note updated!");
       }
 
-      // Reset editing state
+
       setEditingNoteId(null);
       setEditTitle("");
       setEditContent("");
       setIsNewNoteBlank(true);
     } catch (err: any) {
-      console.error('Error saving note:', err);
-      setError(err.message || 'An error occurred while saving the note');
-      toast.error('Failed to save note');
+      console.error("Error saving note:", err);
+      setError(err.message || "An error occurred while saving the note");
+      toast.error("Failed to save note");
     }
   };
 
@@ -200,98 +221,101 @@ const NotesApp = () => {
     if (id === null) {
       setIsNewNoteBlank(false);
     }
-    
+
     setEditingNoteId(id);
     setEditTitle(title);
-    
+
     // Remove metadata from content
     let cleanContent = content;
-    if (content.includes(';')) {
-      cleanContent = content.split(';')[0].trim();
+    if (content.includes(";")) {
+      cleanContent = content.split(";")[0].trim();
     }
     setEditContent(cleanContent);
   };
 
-  // Delete note
   const deleteNote = async (id: string) => {
     try {
       const response = await fetch(`/api/notes/${id}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to delete note');
+        throw new Error("Failed to delete note");
       }
-      
-      setNotes(notes.filter(note => note.id !== id));
-      toast.success('Note deleted successfully!');
-      
+
+      setNotes(notes.filter((note) => note.id !== id));
+      toast.success("Note deleted successfully!");
+
       if (currentNotes.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (err: any) {
-      console.error('Error deleting note:', err);
-      setError(err.message || 'An error occurred while deleting the note');
-      toast.error('Failed to delete note');
+      console.error("Error deleting note:", err);
+      setError(err.message || "An error occurred while deleting the note");
+      toast.error("Failed to delete note");
     }
   };
 
-  // Toggle star status
   const toggleStar = async (id: string) => {
     try {
-      const note = notes.find(n => n.id === id);
+      const note = notes.find((n) => n.id === id);
       if (!note) return;
-      
-      const isCurrentlyStarred = note.content.includes('starred:true');
-      
+
+      const isCurrentlyStarred = note.content.includes("starred:true");
+
       // Update content with new starred status
       let updatedContent = note.content;
       if (isCurrentlyStarred) {
-        updatedContent = updatedContent.replace('starred:true', 'starred:false');
+        updatedContent = updatedContent.replace(
+          "starred:true",
+          "starred:false"
+        );
       } else {
         updatedContent = `${updatedContent}; starred:true`;
       }
-      
+
       const response = await fetch(`/api/notes/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: updatedContent
-        })
+          content: updatedContent,
+        }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to update note');
+        throw new Error("Failed to update note");
       }
-      
+
       const updatedNote = await response.json();
-      setNotes(prevNotes => 
-        prevNotes.map(note => note.id === id ? updatedNote : note)
+      setNotes((prevNotes) =>
+        prevNotes.map((note) => (note.id === id ? updatedNote : note))
       );
-      
-      toast.info(isCurrentlyStarred ? 'Note unmarked' : 'Note marked with star');
+
+      toast.info(
+        isCurrentlyStarred ? "Note unmarked" : "Note marked with star"
+      );
     } catch (err: any) {
-      console.error('Error toggling star:', err);
-      setError(err.message || 'An error occurred while updating the note');
-      toast.error('Failed to update note');
+      console.error("Error toggling star:", err);
+      setError(err.message || "An error occurred while updating the note");
+      toast.error("Failed to update note");
     }
   };
 
-  // Change page
   const changePage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 
   // Handle logout
-  const handleLogout = () => {
-    // Implement logout logic here using NextAuth
-    router.push("/api/auth/signout");
-    toast.info('Đã đăng xuất');
-  };
-
-  // Add a new blank note
-  const addNewBlankNote = () => {
-    setIsNewNoteBlank(true);
+  const handleLogout = async () => {
+    try {
+      // Chuyển hướng đến trang đăng xuất của NextAuth
+      await router.push("/api/auth/signout");
+      // Thông báo đăng xuất thành công
+      toast.info("Đã đăng xuất");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Không thể đăng xuất. Hãy thử lại.");
+    }
   };
 
   return (
@@ -319,7 +343,7 @@ const NotesApp = () => {
         </button>
       </div>
 
-      {/* Slidable sidebar */}
+      {/* sidebar */}
       <div
         className={`fixed top-0 left-0 h-full bg-white shadow-lg z-20 transition-all duration-300 ${
           sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0"
@@ -425,7 +449,7 @@ const NotesApp = () => {
           {error && (
             <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
               <p className="text-red-700">{error}</p>
-              <button 
+              <button
                 className="text-red-600 underline mt-2"
                 onClick={() => setError(null)}
               >
@@ -444,11 +468,8 @@ const NotesApp = () => {
               {/* Notes Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Add New Note Card */}
-                <div
-                  className="rounded-lg shadow-sm min-h-40 p-5 relative group flex flex-col border-2 border-dashed border-gray-300 bg-white"
-                >
-                  {(!isNewNoteBlank && editingNoteId === null) ? (
-                    // Editing mode for new note
+                <div className="rounded-lg shadow-sm min-h-40 p-5 relative group flex flex-col border-2 border-dashed border-gray-300 bg-white">
+                  {!isNewNoteBlank && editingNoteId === null ? (
                     <>
                       <input
                         type="text"
@@ -542,7 +563,9 @@ const NotesApp = () => {
                             Cancel
                           </button>
                           <button
-                            onClick={() => saveNote(note.id, editTitle, editContent)}
+                            onClick={() =>
+                              saveNote(note.id, editTitle, editContent)
+                            }
                             className="px-3 py-1 bg-gray-900 text-white rounded"
                           >
                             Save
@@ -552,9 +575,10 @@ const NotesApp = () => {
                     ) : (
                       // Display mode
                       <>
-                        {/* Edit button (pencil icon) */}
                         <button
-                          onClick={() => startEditing(note.id, note.title, note.content)}
+                          onClick={() =>
+                            startEditing(note.id, note.title, note.content)
+                          }
                           className="absolute right-3 bottom-3 bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <svg
@@ -621,14 +645,18 @@ const NotesApp = () => {
                           </svg>
                         </button>
 
-                        <h3 className="font-bold text-gray-800 mb-2 mt-5">{note.title}</h3>
+                        <h3 className="font-bold text-gray-800 mb-2 mt-5">
+                          {note.title}
+                        </h3>
                         <p
                           className="text-gray-800 font-medium flex-1 cursor-pointer"
-                          onClick={() => startEditing(note.id, note.title, note.content)}
+                          onClick={() =>
+                            startEditing(note.id, note.title, note.content)
+                          }
                         >
-                          {note.content.includes(';') ? 
-                            note.content.split(';')[0].trim() : 
-                            note.content}
+                          {note.content.includes(";")
+                            ? note.content.split(";")[0].trim()
+                            : note.content}
                         </p>
 
                         {/* Date at bottom */}
@@ -641,17 +669,17 @@ const NotesApp = () => {
                 ))}
               </div>
 
-              {/* Show message when no notes */}
               {currentNotes.length === 0 && !loading && (
                 <div className="text-center py-10">
                   <p className="text-gray-500 text-lg">No notes found</p>
                   {searchTerm && (
                     <p className="text-gray-500">
-                      No results for "{searchTerm}". Try a different search term.
+                      No results for "{searchTerm}". Try a different search
+                      term.
                     </p>
                   )}
                   {showStarredOnly && (
-                    <button 
+                    <button
                       onClick={() => setShowStarredOnly(false)}
                       className="mt-4 text-gray-700 underline"
                     >

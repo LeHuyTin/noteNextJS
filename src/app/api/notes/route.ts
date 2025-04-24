@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Validate required fields
+    
     if (!body.title || !body.content || !body.user_id) {
       return NextResponse.json(
         { error: 'Title, content, and user_id are required fields' },

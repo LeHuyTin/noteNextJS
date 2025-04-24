@@ -88,30 +88,44 @@ const SignupForm = () => {
       // Nếu đăng ký thành công, chuyển hướng đến trang xác nhận email
       if (result && result.success) {
         router.push(`/verify-email?email=${encodeURIComponent(result.email)}`);
+      } else {
+        // Nếu kết quả không có success, hiển thị lỗi chung
+        setSignupError('Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.');
+        setIsLoading(false);
       }
     } catch (error: any) {
       console.error('Signup error:', error);
+      setIsLoading(false);
       
-      // Phân tích lỗi từ Supabase và hiển thị thông báo phù hợp
       const errorMessage = error.message || 'Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại sau.';
       
-      // Hiển thị lỗi dưới trường tương ứng nếu liên quan đến một trường cụ thể
-      if (errorMessage.toLowerCase().includes('email')) {
+      // Xử lý và hiển thị lỗi email đã tồn tại
+      if (
+        errorMessage.toLowerCase().includes('email') && 
+        (errorMessage.toLowerCase().includes('đã được đăng ký') || 
+         errorMessage.toLowerCase().includes('already') || 
+         errorMessage.toLowerCase().includes('exists') || 
+         errorMessage.toLowerCase().includes('tồn tại'))
+      ) {
         setErrors((prev) => ({
           ...prev,
           email: errorMessage
         }));
-      } else if (errorMessage.toLowerCase().includes('mật khẩu')) {
+      } 
+      // Xử lý lỗi mật khẩu
+      else if (
+        errorMessage.toLowerCase().includes('mật khẩu') || 
+        errorMessage.toLowerCase().includes('password')
+      ) {
         setErrors((prev) => ({
           ...prev,
           password: errorMessage
         }));
-      } else {
-        // Hiển thị lỗi chung nếu không liên quan đến trường cụ thể
+      } 
+      // Hiển thị lỗi chung nếu không liên quan đến trường cụ thể
+      else {
         setSignupError(errorMessage);
       }
-      
-      setIsLoading(false);
     }
   };
 

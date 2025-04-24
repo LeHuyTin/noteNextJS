@@ -33,7 +33,7 @@ export async function PUT(
     const noteId = params.id;
     const body = await request.json();
     
-    // Check if note exists
+    
     const existingNote = await getNoteById(noteId);
     if (!existingNote) {
       return NextResponse.json(
@@ -42,13 +42,13 @@ export async function PUT(
       );
     }
     
-    // Extract updatable fields
+    
     const updatedData = {
       ...(body.title && { title: body.title }),
       ...(body.content && { content: body.content }),
     };
     
-    // Update note
+    
     const updated = await updateNote(noteId, updatedData);
     return NextResponse.json(updated);
   } catch (error: any) {
@@ -66,7 +66,6 @@ export async function DELETE(
   try {
     const noteId = params.id;
     
-    // Check if note exists
     const existingNote = await getNoteById(noteId);
     if (!existingNote) {
       return NextResponse.json(

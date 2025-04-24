@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { signInWithCredentials } from "@/utils/authUtils";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 const LoginPage = () => {
 
   const searchParams = useSearchParams();
-  const verified = searchParams.get("verified");
+
   const error = searchParams.get("error");
 
   const [formData, setFormData] = useState({
@@ -24,12 +24,6 @@ const LoginPage = () => {
 
 
   useEffect(() => {
-    // Kiểm tra nếu người dùng vừa xác thực email thành công
-    if (verified === "true") {
-      setSuccessMessage("Email của bạn đã được xác nhận. Vui lòng đăng nhập.");
-    }
-
-    // Hiển thị thông báo lỗi từ URL (từ NextAuth)
     if (error) {
       switch (error) {
         case "email_not_confirmed":
@@ -57,7 +51,7 @@ const LoginPage = () => {
           setLoginError("Đăng nhập không thành công. Vui lòng thử lại.");
       }
     }
-  }, [verified, error]);
+  }, [error]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -80,8 +74,7 @@ const LoginPage = () => {
     if (successMessage) {
       setSuccessMessage(null);
     }
-
-    // Reset email not confirmed state khi thay đổi email
+   
     if (name === "email" && isEmailNotConfirmed) {
       setIsEmailNotConfirmed(false);
     }
