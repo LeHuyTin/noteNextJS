@@ -5,6 +5,13 @@ import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+// Import components
+import Sidebar from "@/components/notes/Sidebar";
+import SearchBar from "@/components/notes/SearchBar";
+import NewNoteCard from "@/components/notes/NewNoteCard";
+import NoteCard from "@/components/notes/NoteCard";
+import Pagination from "@/components/notes/Pagination";
+
 const NotesApp = () => {
   const noteColors = ["#ff9f7f", "#ffcc7f", "#d8b4fe", "#80deea", "#e6ee9c"];
   const [username, setUsername] = useState("");
@@ -81,7 +88,6 @@ const NotesApp = () => {
     );
   }
 
-
   const convertNoteForUI = (note: Note) => {
     return {
       id: note.id,
@@ -101,7 +107,6 @@ const NotesApp = () => {
       user_id: note.user_id,
     };
   };
-
 
   const filteredNotes = notes
     .map(convertNoteForUI)
@@ -135,7 +140,6 @@ const NotesApp = () => {
       return;
     }
       
-
     if (!session?.user?.id) {
       toast.error("You must be logged in to save notes");
       router.replace("/login");
@@ -203,7 +207,6 @@ const NotesApp = () => {
         );
         toast.info("Note updated!");
       }
-
 
       setEditingNoteId(null);
       setEditTitle("");
@@ -305,113 +308,16 @@ const NotesApp = () => {
     setCurrentPage(pageNumber);
   };
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      // Chuyển hướng đến trang đăng xuất của NextAuth
-      await router.push("/api/auth/signout");
-      // Thông báo đăng xuất thành công
-      toast.info("Đã đăng xuất");
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Không thể đăng xuất. Hãy thử lại.");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* User sidebar toggle */}
-      <div
-        className="fixed top-10 left-10 z-10 "
-        onMouseEnter={() => setSidebarOpen(true)}
-      >
-        <button className="bg-gray-900 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-md">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-7 w-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5.121 17.804A9 9 0 0112 15a9 9 0 016.879 2.804M12 12a4 4 0 100-8 4 4 0 000 8z"
-            />
-          </svg>
-        </button>
-      </div>
-
-      {/* sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-lg z-20 transition-all duration-300 ${
-          sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0"
-        }`}
-        onMouseLeave={() => setSidebarOpen(false)}
-      >
-        <div className="p-6">
-          <div className="mb-8 pt-8">
-            <h2 className="text-xl text-black font-semibold">Xin chào</h2>
-            <p className="text-gray-700 font-medium">{username}</p>
-          </div>
-
-          <hr className="my-6" />
-
-          <ul className="space-y-4">
-            <li>
-              <button
-                onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className={`flex cursor-pointer items-center w-full px-3 py-2 rounded-md ${
-                  showStarredOnly
-                    ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                    : "text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill={showStarredOnly ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-3"
-                >
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-                {showStarredOnly ? "Hiện tất cả" : "Có gắn dấu sao"}
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={handleLogout}
-                className="flex items-center cursor-pointer w-full px-3 py-2 rounded-md text-gray-700 hover:bg-gray-300"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-3"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Đăng xuất
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
+      {/* Sidebar Component */}
+      <Sidebar
+        username={username}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        showStarredOnly={showStarredOnly}
+        setShowStarredOnly={setShowStarredOnly}
+      />
 
       {/* Main content */}
       <div className="flex-1 p-8 ml-0">
@@ -419,30 +325,8 @@ const NotesApp = () => {
           <div className="mb-8 mt-8">
             <h1 className="text-4xl font-bold text-gray-800 mb-6">Notes</h1>
 
-            {/* Search bar */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Tìm kiếm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full py-2 px-4 rounded-md border border-gray-300 shadow-sm focus:shadow-md focus:none focus:outline-none text-black"
-              />
-              <svg
-                className="absolute right-3 top-2.5 text-gray-800 h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
+            {/* Search bar component */}
+            <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           </div>
 
           {/* Error message */}
@@ -467,205 +351,35 @@ const NotesApp = () => {
             <>
               {/* Notes Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Add New Note Card */}
-                <div className="rounded-lg shadow-sm min-h-40 p-5 relative group flex flex-col border-2 border-dashed border-gray-300 bg-white">
-                  {!isNewNoteBlank && editingNoteId === null ? (
-                    <>
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="w-full bg-transparent border-b border-gray-300 mb-2 focus:outline-none text-gray-800 font-medium"
-                        placeholder="Title"
-                      />
-                      <textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full h-full min-h-32 bg-transparent resize-none border-none focus:outline-none text-gray-800 font-medium"
-                        autoFocus
-                        placeholder="Type your note here..."
-                      />
-                      <div className="flex justify-end mt-4 gap-2">
-                        <button
-                          onClick={() => {
-                            setIsNewNoteBlank(true);
-                            setEditTitle("");
-                            setEditContent("");
-                          }}
-                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => saveNote(null, editTitle, editContent)}
-                          className="px-3 py-1 bg-gray-900 text-white rounded"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    // Add new note button
-                    <div
-                      className="flex items-center justify-center h-full cursor-pointer"
-                      onClick={() => startEditing(null, "", "")}
-                    >
-                      <div className="text-center text-gray-500">
-                        <svg
-                          className="mx-auto h-10 w-10 mb-2"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                          />
-                        </svg>
-                        <p>Add New Note</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Add New Note Card Component */}
+                <NewNoteCard
+                  isNewNoteBlank={isNewNoteBlank}
+                  editingNoteId={editingNoteId}
+                  editTitle={editTitle}
+                  editContent={editContent}
+                  setEditTitle={setEditTitle}
+                  setEditContent={setEditContent}
+                  setIsNewNoteBlank={setIsNewNoteBlank}
+                  startEditing={startEditing}
+                  saveNote={saveNote}
+                />
 
-                {/* Notes from API */}
+                {/* Notes Cards Components */}
                 {currentNotes.map((note) => (
-                  <div
+                  <NoteCard
                     key={note.id}
-                    className="rounded-lg shadow-sm min-h-40 p-5 relative group flex flex-col"
-                    style={{ backgroundColor: note.color }}
-                  >
-                    {editingNoteId === note.id ? (
-                      // Editing mode
-                      <>
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full bg-transparent border-b border-gray-300 mb-2 focus:outline-none text-gray-800 font-medium"
-                          placeholder="Title"
-                        />
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full h-full min-h-32 bg-transparent resize-none border-none focus:outline-none text-gray-800 font-medium"
-                          autoFocus
-                          placeholder="Type your note here..."
-                        />
-                        <div className="flex justify-end mt-4 gap-2">
-                          <button
-                            onClick={() => setEditingNoteId(null)}
-                            className="px-3 py-1 bg-gray-200 text-gray-700 rounded"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() =>
-                              saveNote(note.id, editTitle, editContent)
-                            }
-                            className="px-3 py-1 bg-gray-900 text-white rounded"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      // Display mode
-                      <>
-                        <button
-                          onClick={() =>
-                            startEditing(note.id, note.title, note.content)
-                          }
-                          className="absolute right-3 bottom-3 bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                          </svg>
-                        </button>
-
-                        {/* Star button */}
-                        <button
-                          onClick={() => toggleStar(note.id)}
-                          className={`absolute right-3 top-3 ${
-                            note.isStarred
-                              ? "text-yellow-400 bg-gray-800"
-                              : "text-white bg-gray-900"
-                          } rounded-full w-8 h-8 flex items-center justify-center ${
-                            note.isStarred
-                              ? "opacity-100"
-                              : "opacity-0 group-hover:opacity-100"
-                          } transition-opacity`}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill={note.isStarred ? "currentColor" : "none"}
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                          </svg>
-                        </button>
-
-                        {/* Delete button - Moving from top-left to top-right next to the star button */}
-                        <button
-                          onClick={() => deleteNote(note.id)}
-                          className="absolute right-14 top-3 bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                        </button>
-
-                        <h3 className="font-bold text-gray-800 mb-2 mt-5">
-                          {note.title}
-                        </h3>
-                        <p
-                          className="text-gray-800 font-medium flex-1 cursor-pointer"
-                          onClick={() =>
-                            startEditing(note.id, note.title, note.content)
-                          }
-                        >
-                          {note.content.includes(";")
-                            ? note.content.split(";")[0].trim()
-                            : note.content}
-                        </p>
-
-                        {/* Date at bottom */}
-                        <p className="text-gray-700 text-sm mt-4">
-                          {note.date}
-                        </p>
-                      </>
-                    )}
-                  </div>
+                    note={note}
+                    editingNoteId={editingNoteId}
+                    editTitle={editTitle}
+                    editContent={editContent}
+                    setEditTitle={setEditTitle}
+                    setEditContent={setEditContent}
+                    setEditingNoteId={setEditingNoteId}
+                    startEditing={startEditing}
+                    saveNote={saveNote}
+                    deleteNote={deleteNote}
+                    toggleStar={toggleStar}
+                  />
                 ))}
               </div>
 
@@ -689,26 +403,12 @@ const NotesApp = () => {
                 </div>
               )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-6">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (number) => (
-                      <button
-                        key={number}
-                        onClick={() => changePage(number)}
-                        className={`mx-1 px-3 py-1 rounded ${
-                          currentPage === number
-                            ? "bg-gray-900 text-white"
-                            : "bg-white text-gray-700 hover:bg-gray-100"
-                        }`}
-                      >
-                        {number}
-                      </button>
-                    )
-                  )}
-                </div>
-              )}
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                changePage={changePage}
+              />
             </>
           )}
         </div>
