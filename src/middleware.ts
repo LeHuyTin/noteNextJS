@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-// Các đường dẫn không cần phải xác thực
+
 const publicPaths = ['/login', '/signup', '/verify-email', '/auth/callback'];
 
 export async function middleware(request: NextRequest) {
-  // Kiểm tra nếu đường dẫn là các đường dẫn công khai
+
   const path = request.nextUrl.pathname;
   
-  // Kiểm tra nếu đường dẫn hiện tại không cần xác thực
+
   const isPublicPath = publicPaths.some(publicPath => 
     path === publicPath || path.startsWith('/api/auth/')
   );

@@ -3,10 +3,10 @@ import { getNoteById, updateNote, deleteNote } from '@/utils/notesUtils';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const noteId = params.id;
+    const noteId = context.params.id;
     const note = await getNoteById(noteId);
     
     if (!note) {
@@ -27,10 +27,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const noteId = params.id;
+    const noteId = context.params.id;
     const body = await request.json();
     
     
@@ -61,10 +61,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const noteId = params.id;
+    const noteId = context.params.id;
     
     const existingNote = await getNoteById(noteId);
     if (!existingNote) {
